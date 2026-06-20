@@ -35,6 +35,7 @@ function sincronizarLocalStorage() {
     // Guardamos el arreglo bajo la clave 'db_sistema_sena'
     localStorage.setItem("db_sistema_sena", JSON.stringify(empleados));
     console.log("Sistema: Datos sincronizados permanentemente.");
+    renderizarTabla(); // Actualizamos la vista siempre que guardamos
 }
 
 // =============================================================================
@@ -46,46 +47,90 @@ function sincronizarLocalStorage() {
  * Objetivo: Capturar datos del usuario y guardarlos en el arreglo.
  * Proceso: Valida duplicados, campos vacíos y guarda en localStorage.
  */
-function registrarEmpleado() {
-    // Captura de datos con limpieza de espacios (.trim)
-    const idInput = prompt("Ingrese la Identificación del empleado:");
-    if (idInput === null) return; // Si el usuario cancela la ventana
-    const identificacion = idInput.trim();
+/**
+ * Nombre: registrarEmpleadoDesdeForm
+ * Objetivo: Captura los datos del formulario HTML en lugar de usar prompts.
+ */
+function registrarEmpleadoDesdeForm() {
+    const idInput = document.getElementById("id");
+    const nombreInput = document.getElementById("nombre");
+    const cargoInput = document.getElementById("cargo");
+    const salarioInput = document.getElementById("salario");
+    const areaInput = document.getElementById("area");
 
-    // 1. VALIDACIÓN DE DUPLICADOS (Usamos .some que devuelve true si encuentra coincidencia)
+    const identificacion = idInput.value.trim();
+    const nombre = nombreInput.value.trim();
+    const cargo = cargoInput.value.trim();
+    const salario = parseFloat(salarioInput.value);
+    const area = areaInput.value.trim();
+
+    // 1. VALIDACIÓN
+    if (!identificacion || !nombre || !cargo || isNaN(salario) || !area) {
+        alert("ERROR: Por favor complete todos los campos correctamente.");
+        return;
+    }
+
     const existe = empleados.some(emp => emp.identificacion === identificacion);
     if (existe) {
         alert("ERROR: Ya existe un empleado con esa identificación.");
         return;
     }
 
-    const nombre = prompt("Ingrese el Nombre Completo:")?.trim();
-    const cargo = prompt("Ingrese el Cargo:")?.trim();
-    const salario = parseFloat(prompt("Ingrese el Salario (solo números):"));
-    const area = prompt("Ingrese el Área (ej. Ventas, TI):")?.trim();
+    // 2. CREACIÓN Y GUARDADO
+    const nuevoEmpleado = { identificacion, nombre, cargo, salario, area };
+    empleados.push(nuevoEmpleado);
+    sincronizarLocalStorage();
 
-    // 2. VALIDACIÓN DE CAMPOS VACÍOS Y TIPO DE DATO
-    if (!identificacion || !nombre || !cargo || isNaN(salario) || !area) {
-        alert("ERROR: Por favor complete todos los campos correctamente.");
+    // 3. LIMPIEZA
+    idInput.value = "";
+    nombreInput.value = "";
+    cargoInput.value = "";
+    salarioInput.value = "";
+    areaInput.value = "";
+    
+    alert("¡Empleado registrado con éxito!");
+}
+
+/**
+ * Nombre: renderizarTabla
+ * Objetivo: Dibujar la base de datos en el HTML.
+ */
+function renderizarTabla() {
+    const contenedor = document.getElementById("contenedor-tabla");
+    
+    if (empleados.length === 0) {
+        contenedor.innerHTML = `<div class="empty-state">No hay empleados registrados todavía.</div>`;
         return;
     }
 
-    // 3. CREACIÓN DEL OBJETO
-    const nuevoEmpleado = {
-        identificacion: identificacion,
-        nombre: nombre,
-        cargo: cargo,
-        salario: salario,
-        area: area
-    };
+    let html = `
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Cargo</th>
+                    <th>Área</th>
+                    <th>Salario</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
 
-    // 4. GUARDADO EN EL ARREGLO
-    empleados.push(nuevoEmpleado);
+    empleados.forEach(emp => {
+        html += `
+            <tr>
+                <td>${emp.identificacion}</td>
+                <td>${emp.nombre}</td>
+                <td>${emp.cargo}</td>
+                <td>${emp.area}</td>
+                <td>$${emp.salario.toLocaleString()}</td>
+            </tr>
+        `;
+    });
 
-    // 5. PERSISTENCIA: Guardamos en el disco duro del navegador
-    sincronizarLocalStorage();
-
-    alert("¡Empleado registrado y guardado exitosamente!");
+    html += `</tbody></table>`;
+    contenedor.innerHTML = html;
 }
 
 /**
@@ -183,7 +228,12 @@ function mostrarMenu() {
 // =============================================================================
 // INICIO DEL PROGRAMA
 // =============================================================================
-mostrarMenu();
+// Ya no llamamos a mostrarMenu() porque usamos botones y formularios en el HTML.
+// Pero inicializamos la tabla para mostrar los datos actuales.
+
+document.addEventListener("DOMContentLoaded", () => {
+    renderizarTabla();
+});
 
 
 /* 
